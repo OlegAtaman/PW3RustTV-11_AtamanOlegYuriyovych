@@ -1,7 +1,10 @@
-0,time,wash dishes,pavlo1
-1,15:37 03.12,Wash my dishes,pavlo1
-2,16:37 03.12,Wash 123 dishes,pavlo2
-4,14:00 03.12,Rector controle,admin5
-6,13:13 03.12,Jump over my head,admin
-7,15:00,Do my homework,admin
-8,15:31 06.12,Doo Nothing,NewHackerKing
+0,time,wash dishes,pavlo1,in progress
+1,15:37 03.12,Wash my dishes,pavlo1,in progress
+2,16:37 03.12,Wash 123 dishes,pavlo2,completed
+4,14:00 03.12,Rector controle,admin5,in progress
+6,13:13 03.12,Jump over my head,admin,completed
+7,15:00,Do my homework,admin,completed
+8,15:31 06.12,Doo Nothing,NewHackerKing,in progress
+9,13:16 05.12,Complete all of my tasks, admin,in progress
+10,12:00 05.12,Write much code,NewHackerUser,completed
+11,14:00 06.12,Watch Breaking Bad,admin, in progress

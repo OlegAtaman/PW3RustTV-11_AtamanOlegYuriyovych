@@ -20,7 +20,6 @@ fn login() -> Option<String> {
 
     let file_path = "src/users.csv";
 
-    // Відкриваємо файл та читаємо його вміст
     let file = File::open(file_path).ok()?;
     let reader = BufReader::new(file);
 
@@ -28,12 +27,10 @@ fn login() -> Option<String> {
         let line = line.ok()?;
         let columns: Vec<&str> = line.split(',').collect();
 
-        // Перевіряємо, чи рядок має хоча б 3 колонки
         if columns.len() >= 3 {
             let file_username = columns[1].trim();
             let file_password = columns[2].trim();
 
-            // Перевіряємо логін і пароль
             if file_username == username && file_password == password {
                 return Some(file_username.to_string());
             }
@@ -53,13 +50,11 @@ fn register() -> Option<String> {
         .expect("Не вдалося зчитати логін");
     let username = username.trim();
 
-    // Check username length
     if username.len() < 8 {
         println!("Логін повинен бути мінімум 8 символів!");
         return None;
     }
 
-    // Open users.csv and check if the username already exists in the second column
     let file_path = "src/users.csv";
     if let Ok(file) = File::open(file_path) {
         let reader = BufReader::new(file);
@@ -74,7 +69,6 @@ fn register() -> Option<String> {
         }
     }
 
-    // Prompt for a password
     print!("Введіть пароль (мінімум 8 символів): ");
     let _ = io::Write::flush(&mut io::stdout());
     let mut password = String::new();
@@ -83,13 +77,11 @@ fn register() -> Option<String> {
         .expect("Не вдалося зчитати пароль");
     let password = password.trim();
 
-    // Check password length
     if password.len() < 8 {
         println!("Пароль повинен бути мінімум 8 символів!");
         return None;
     }
 
-    // Prompt for password confirmation
     print!("Повторіть пароль: ");
     let _ = io::Write::flush(&mut io::stdout());
     let mut confirm_password = String::new();
@@ -104,8 +96,7 @@ fn register() -> Option<String> {
         return None;
     }
 
-    // Find the last ID in the file and increment it
-    let mut new_id = 1; // Default ID if the file is empty
+    let mut new_id = 1;
     if let Ok(file) = File::open(file_path) {
         let reader = BufReader::new(file);
         for line in reader.lines() {
@@ -120,7 +111,6 @@ fn register() -> Option<String> {
         }
     }
 
-    // Add the new user to the CSV file
     if let Ok(mut file) = OpenOptions::new()
         .append(true)
         .create(true)
@@ -155,12 +145,11 @@ fn add_task_to_csv(time: String, task: String, username: String) {
                 })
                 .unwrap_or(0) // Default to 0 if no valid ID found
         }
-        Err(_) => 0, // If file doesn't exist, start with ID 0
+        Err(_) => 0,
     };
 
     let new_id = last_id + 1;
 
-    // Відкриваємо файл у режимі додавання або створюємо новий, якщо його немає
     let mut file = OpenOptions::new()
         .create(true)
         .append(true)
@@ -168,7 +157,7 @@ fn add_task_to_csv(time: String, task: String, username: String) {
         .expect("Failed to open tasks.csv");
 
     // Write the new row to the file
-    let csv_row = format!("{},{},{},{}\n", new_id, time, task, username);
+    let csv_row = format!("{},{},{},{}, in progress\n", new_id, time, task, username);
     file.write_all(csv_row.as_bytes())
         .expect("Failed to write to tasks.csv");
 }
@@ -177,10 +166,8 @@ fn run_todo(username: String) {
     loop {
         let file_path = "src/tasks.csv";
 
-        // Initialize a vector to store tasks as [id, time, task]
         let mut tasks: Vec<Vec<String>> = Vec::new();
 
-        // Open the CSV file
         if let Ok(file) = File::open(file_path) {
             let reader = BufReader::new(file);
 
@@ -189,15 +176,13 @@ fn run_todo(username: String) {
                 if let Ok(line) = line {
                     let columns: Vec<&str> = line.split(',').collect();
 
-                    // Ensure the row has at least 4 columns
                     if columns.len() >= 4 {
-                        // Check if the 4th column matches the username
                         if columns[3].trim() == username {
-                            // Collect the first 3 columns (ID, Time, Task) into a task
                             tasks.push(vec![
                                 columns[0].trim().to_string(), // ID
                                 columns[1].trim().to_string(), // Time
-                                columns[2].trim().to_string(), // Task
+                                columns[2].trim().to_string(),
+                                columns[4].trim().to_string()
                             ]);
                         }
                     }
@@ -210,14 +195,15 @@ fn run_todo(username: String) {
 
         println!("Ваші завдання:");
 
-        println!("Num    Time          Task");
+        println!("Num    Time          Task                           Status");
         for (i, task) in tasks.iter().enumerate() {
-            if let [id, time, task_name] = &task[..] {
+            if let [id, time, task_name, is_completed] = &task[..] {
                 println!(
-                    "{:<6} {:<8} {}",
-                    i + 1,           // Display task number starting from 1
-                    time,            // Time column
-                    task_name        // Task description
+                    "{:<6} {:<8} {}  - {}",
+                    i + 1,
+                    time,
+                    task_name,
+                    is_completed
                 );
             }
         }
@@ -230,7 +216,9 @@ fn run_todo(username: String) {
         println!("1. Оновити завдання");
         println!("2. Видалити завдання");
         println!("3. Створити завдання");
-        println!("4. Вийти з облікового запису");
+        println!("4. Виконати завдання");
+        println!("5. Експортувати файл з завданнями");
+        println!("6. Вийти з облікового запису");
         print!("Введіть відповідь: ");
         let _ = io::Write::flush(&mut io::stdout());
         let mut input = String::new();
@@ -253,9 +241,8 @@ fn run_todo(username: String) {
                     return;
                 }
 
-                // Знайдемо ID для завдання, яке ми хочемо редагувати
-                let task_to_edit = &tasks[task_number - 1]; // Зменшуємо на 1, бо tasks[0] це перше завдання
-                let task_id = &task_to_edit[0]; // Перше значення в task це ID
+                let task_to_edit = &tasks[task_number - 1];
+                let task_id = &task_to_edit[0];
 
                 println!("Що змінити?");
                 println!("1. Час");
@@ -290,7 +277,7 @@ fn run_todo(username: String) {
                                     let columns: Vec<&str> = line.split(',').collect();
                                     if columns.len() >= 4 {
                                         if columns[0].trim() == task_id {
-                                            updated_lines.push(format!("{},{},{}", task_id, new_time, columns[2]));
+                                            updated_lines.push(format!("{},{},{},{},{}", task_id, new_time, columns[2], columns[3], columns[4]));
                                         } else {
                                             updated_lines.push(line);
                                         }
@@ -337,7 +324,7 @@ fn run_todo(username: String) {
                                     let columns: Vec<&str> = line.split(',').collect();
                                     if columns.len() >= 4 {
                                         if columns[0].trim() == task_id {
-                                            updated_lines.push(format!("{},{},{}, {}", task_id, columns[1], new_task, username));
+                                            updated_lines.push(format!("{},{},{},{},{}", task_id, columns[1], new_task, username, columns[4]));
                                         } else {
                                             updated_lines.push(line);
                                         }
@@ -383,10 +370,10 @@ fn run_todo(username: String) {
                 }
 
                 // Знайдемо ID для завдання, яке ми хочемо видалити
-                let task_to_delete = &tasks[task_number - 1]; // Зменшуємо на 1, бо tasks[0] це перше завдання
-                let task_id = &task_to_delete[0]; // Перше значення в task це ID
+                let task_to_delete = &tasks[task_number - 1];
+                let task_id = &task_to_delete[0];
 
-                println!("Ви справді хочете видалити завдання {}?", task_to_delete[2]);  // task_to_delete[2] - це завдання
+                println!("Ви справді хочете видалити завдання {}?", task_to_delete[2]);
                 print!("Відповідь (Так/Ні): ");
                 let _ = io::Write::flush(&mut io::stdout());
                 let mut final_ans = String::new();
@@ -395,7 +382,6 @@ fn run_todo(username: String) {
                     .expect("Не вдалося зчитати ввід");
 
                 if final_ans.trim() == "Так" {
-                    // КОД СЮДИ!
                     let file_path = "src/tasks.csv";
 
                     // Прочитаємо всі рядки з файлу
@@ -403,13 +389,12 @@ fn run_todo(username: String) {
                     if let Ok(file) = File::open(file_path) {
                         let reader = BufReader::new(file);
 
-                        // Читаємо всі рядки
                         for line in reader.lines() {
                             if let Ok(line) = line {
                                 let columns: Vec<&str> = line.split(',').collect();
                                 if columns.len() >= 4 {
-                                    if columns[0].trim() != task_id {  // Якщо ID не співпадає з тим, що ми хочемо видалити
-                                        updated_lines.push(line);  // Додаємо рядок в список для подальшого запису
+                                    if columns[0].trim() != task_id {
+                                        updated_lines.push(line);
                                     }
                                 }
                             }
@@ -419,11 +404,9 @@ fn run_todo(username: String) {
                         return;
                     }
 
-                    // Тепер ми перепишемо файл без видаленого рядка
                     if let Ok(file) = OpenOptions::new().write(true).truncate(true).open(file_path) {
                         let mut writer = BufWriter::new(file);
 
-                        // Запишемо всі залишкові рядки назад у файл
                         for line in updated_lines {
                             if let Err(e) = writeln!(writer, "{}", line) {
                                 println!("Не вдалося записати в файл: {}", e);
@@ -458,6 +441,110 @@ fn run_todo(username: String) {
                 println!("Завдання додане!");
             },
             Ok(4) => {
+                print!("Введіть номер завдання для виконання: ");
+                let _ = io::Write::flush(&mut io::stdout());
+                let mut ans = String::new();
+                io::stdin()
+                    .read_line(&mut ans)
+                    .expect("Не вдалося зчитати ввід");
+                let task_number: usize = ans.trim().parse().unwrap_or(0);
+
+                if task_number == 0 || task_number > tasks.len() {
+                    println!("Невірний номер завдання!");
+                    return;
+                }
+
+                let task_to_edit = &tasks[task_number - 1]; // Зменшуємо на 1, бо tasks[0] це перше завдання
+                let task_id = &task_to_edit[0]; // Перше значення в task це ID
+
+                println!("Ви справді хочете позначити виконаним завдання {}?", task_to_edit[2]);  // task_to_delete[2] - це завдання
+                print!("Відповідь (Так/Ні): ");
+                let _ = io::Write::flush(&mut io::stdout());
+                let mut final_ans = String::new();
+                io::stdin()
+                    .read_line(&mut final_ans)
+                    .expect("Не вдалося зчитати ввід");
+
+                if final_ans.trim() == "Так" {
+
+                    let file_path = "src/tasks.csv";
+                    let mut updated_lines = Vec::new();
+
+                    if let Ok(file) = File::open(file_path) {
+                        let reader = BufReader::new(file);
+                        for line in reader.lines() {
+                            if let Ok(line) = line {
+                                let columns: Vec<&str> = line.split(',').collect();
+                                if columns.len() >= 4 {
+                                    if columns[0].trim() == task_id {
+                                        updated_lines.push(format!("{},{},{},{},{}", task_id, columns[1], columns[2], columns[3], "completed".to_string()));
+                                    } else {
+                                        updated_lines.push(line);
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        println!("Не вдалося відкрити файл tasks.csv!");
+                        return;
+                    }
+
+                    if let Ok(file) = OpenOptions::new().write(true).truncate(true).open(file_path) {
+                        let mut writer = BufWriter::new(file);
+                        for line in updated_lines {
+                            if let Err(e) = writeln!(writer, "{}", line) {
+                                println!("Не вдалося записати в файл: {}", e);
+                                return;
+                            }
+                        }
+                        println!("Час успішно оновлено!");
+                    } else {
+                        println!("Не вдалося відкрити файл tasks.csv для запису!");
+                    }
+                }
+            },
+            Ok(5) => {
+                let export_file_path = "tasks_export.txt";
+
+                if let Ok(mut file) = File::create(export_file_path) {
+                    if let Err(e) = writeln!(file, "Ваші завдання:\n") {
+                        println!("Помилка запису в файл: {}", e);
+                        return;
+                    }
+                    if let Err(e) = writeln!(file, "Num    Time          Task                           Status") {
+                        println!("Помилка запису в файл: {}", e);
+                        return;
+                    }
+
+                    for (i, task) in tasks.iter().enumerate() {
+                        if let [id, time, task_name, is_completed] = &task[..] {
+                            if let Err(e) = writeln!(
+                                file,
+                                "{:<6} {:<8} {}  - {}",
+                                i + 1,
+                                time,
+                                task_name,
+                                is_completed
+                            ) {
+                                println!("Помилка запису в файл: {}", e);
+                                return;
+                            }
+                        }
+                    }
+
+                    if tasks.is_empty() {
+                        if let Err(e) = writeln!(file, "Немає завдань для користувача {}", username) {
+                            println!("Помилка запису в файл: {}", e);
+                            return;
+                        }
+                    }
+
+                    println!("Завдання успішно експортовано у файл {}", export_file_path);
+                } else {
+                    println!("Не вдалося створити файл для експорту!");
+                }
+            },
+            Ok(6) => {
                 println!("Вихід з облікового запису...");
                 break;
             }
@@ -479,7 +566,7 @@ fn main() {
             .read_line(&mut answer)
             .expect("Не вдалося зчитати ввід");
 
-        let username: Option<String>; // Initialize the username variable
+        let username: Option<String>;
 
         match answer.trim().parse::<u32>() {
             Ok(1) => {
@@ -490,18 +577,17 @@ fn main() {
             }
             Ok(3) => {
                 println!("Завершення роботи програми...");
-                return; // Exit the program
+                return;
             }
             _ => {
                 println!("Невірний вибір. Спробуйте ще раз.");
-                username = None; // Explicitly assign None in this case
+                username = None;
             }
         }
 
         match username {
             Some(user) => {
                 println!("Welcome, {}!", user);
-                // Now you can call run_todo with the username
                 run_todo(user);
             }
             None => {
